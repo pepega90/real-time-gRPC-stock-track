@@ -2,6 +2,8 @@
 
 is a real-time stock monitoring system that streams live stock prices using gRPC and displays them on a web-based dashboard. It utilizes Golang on the backend for handling gRPC connections and HTTP streaming, while the frontend provides a user-friendly interface for visualizing stock price updates.
 
+<img src="https://github.com/pepega90/real-time-gRPC-stock-track/blob/main/preview.gif" />
+
 ## Features
 
 - **Real-Time Data Streaming**: Live stock price updates with real-time price changes displayed in a seamless streaming format.
