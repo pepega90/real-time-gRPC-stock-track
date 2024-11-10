@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Stock Market Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/lightweight-charts@4.0.0/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #f5f5dc; /* Beige background */
+        }
+        #app {
+            display: flex;
+            flex-direction: row;
+            height: 80vh; /* Reduced height */
+            width: 90vw; /* Limiting width */
+            max-width: 1200px; /* Max width for better control */
+            padding: 1rem;
+            background-color: #ffffff; /* Light background for container */
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        #chart-container {
+            flex: 1;
+            min-width: 600px; /* Minimum width for the chart to prevent shrinking */
+            background-color: #f5f5dc; /* Beige background for chart */
+            border-radius: 8px;
+        }
+        #stock-info {
+            width: 200px;
+            padding-right: 1rem;
+            color: #333; /* Dark text color for contrast */
+        }
+        footer {
+            margin-top: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Stock Price Display -->
+        <div id="stock-info" class="text-left">
+            <h2 class="text-2xl font-semibold mb-4">Live Stock Market</h2>
+            <h3 class="text-xl font-medium" id="stock-name">Stock: AAPL</h3>
+            <p class="text-3xl font-bold text-green-600" id="stock-price">$150.00</p>
+            <p class="text-gray-500" id="stock-change">+0.00%</p>
+        </div>
+
+        <!-- Chart Container -->
+        <div id="chart-container"></div>
+    </div>
+
+    <!-- Footer with Heart Icon -->
+    <footer>Made with ❤️ by Aji Mustofa</footer>
+
+    <script>
+        // Initialize the baseline price
+        const baselinePrice = 150.00;
+
+        // Create the chart with a beige background theme
+        const chartContainer = document.getElementById('chart-container');
+        const chart = LightweightCharts.createChart(chartContainer, {
+            width: chartContainer.clientWidth,
+            height: chartContainer.clientHeight,
+            layout: {
+                backgroundColor: '#f5f5dc', // Beige background for the chart
+                textColor: '#333' // Dark text color for contrast
+            },
+            grid: {
+                vertLines: { color: 'rgba(42, 46, 57, 0.2)' },
+                horzLines: { color: 'rgba(42, 46, 57, 0.2)' }
+            },
+            rightPriceScale: { borderVisible: false },
+            timeScale: {
+                borderVisible: false,
+                timeVisible: true,
+                secondsVisible: true,
+            },
+        });
+
+        // Create the baseline series with colored regions above and below the baseline
+        const series = chart.addBaselineSeries({
+            baseValue: { type: 'price', price: baselinePrice },
+            topFillColor1: 'rgba(0, 204, 153, 0.4)', // Greenish gradient for above baseline
+            topFillColor2: 'rgba(0, 204, 153, 0.1)',
+            topLineColor: 'rgba(0, 204, 153, 1)', // Bright green line for above baseline
+            bottomFillColor1: 'rgba(255, 99, 71, 0.4)', // Reddish gradient for below baseline
+            bottomFillColor2: 'rgba(255, 99, 71, 0.1)',
+            bottomLineColor: 'rgba(255, 99, 71, 1)', // Bright red line for below baseline
+        });
+
+        // Initialize data with the starting point at the baseline price
+        let data = [{ time: Math.floor(Date.now() / 1000), value: baselinePrice }];
+        series.setData(data);
+
+        // SSE connection to receive stock updates
+        const eventSource = new EventSource("/stock-update");
+
+        eventSource.onmessage = function(event) {
+            const newData = JSON.parse(event.data);
+            const currentTime = Math.floor(Date.now() / 1000);
+
+            // Update stock price and change in UI
+            document.getElementById('stock-price').textContent = `$${newData.price.toFixed(2)}`;
+            document.getElementById('stock-change').textContent = `${newData.change >= 0 ? '+' : ''}${newData.change.toFixed(2)}%`;
+            document.getElementById('stock-change').className = `text-${newData.change >= 0 ? 'green' : 'red'}-600`;
+
+            // Add new data point to the series
+            const point = { time: currentTime, value: newData.price };
+            series.update(point);
+        };
+
+        // Resize the chart to fit container dynamically
+        window.addEventListener('resize', () => {
+            chart.resize(chartContainer.clientWidth, chartContainer.clientHeight);
+        });
+    </script>
+</body>
+</html>
